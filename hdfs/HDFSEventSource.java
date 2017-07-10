@@ -26,6 +26,15 @@ import static org.apache.flume.PollableSource.Status.BACKOFF;
 
 /**
  * Created by ramkrisn on 6/15/17.
+ * Flume Version - 1.6.0
+ * Hadoop Version - 2.6.0
+ * HADOOP_HOME is required to be setup for running the Flume agent
+ * This is a custom Flume source class, to read events (files) from HDFS directory
+ * Require a Flume config agent file to be provided, set the property name type as org.oclc.ingest.hdfs.HDFSEventSource
+ * Make sure to include hdfs & core-site.xml configs for hadoop.
+ * Copy the jar of this class into $FLUME_HOME/plugins.d
+ * Example:
+ * Start a Flume process as: bin/flume-ng agent --conf conf --conf-file conf/custom_source.conf -C /Users/ramkrisn/Documents/Projects/Ingest/Ingest-imakeup/src/main/resources/confs/hdfs_conf/ --name a1 -Dflume.root.logger=INFO,console
  */
 
 public class HDFSEventSource extends AbstractSource implements PollableSource, Configurable {
@@ -100,6 +109,7 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
     }
 
     private void readFiles(FileStatus[] list) throws IOException, InterruptedException {
+        boolean dir=false;
         for (int i = 0; i < list.length; i++) {
             if (list[i].isDirectory()) {
                 //Note Doesn't read contents of Sub Directories. Can be modified by a recursive call here. 
@@ -109,6 +119,7 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
                 //Ignoring Zipped Files and Files already read indicative by .done extension
                 if (!(filename.endsWith(".tgz") || filename.endsWith(".gz") || filename.toLowerCase().endsWith(".zip") || filename.toLowerCase().endsWith(".done"))) {
                     if (!list[i].isFile()) {
+                        dir=true;
                     }
                     else{
                         FSDataInputStream fsin = fileSystem.open(list[i].getPath());
@@ -116,9 +127,12 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
                         byte dataBuff[] = new byte[(int) list[i].getLen()];
                         fsin.readFully(dataBuff);
 
-                        header.put("FileName",String.valueOf(list[i].getPath()));
-                        header.put("TimeStamp",String.valueOf(list[i].getModificationTime()));
+                        header.put("DirectoryStatus",String.valueOf(dir));
+                        header.put("FilePath",String.valueOf(list[i].getPath()));
                         header.put("FileLength",String.valueOf(dataBuff.length));
+                        header.put("TimeStamp",String.valueOf(list[i].getModificationTime()));
+                        header.put("Owner", list[i].getOwner());
+                        header.put("Permission", String.valueOf(list[i].getPermission()));
 
                         Event event = EventBuilder.withBody(dataBuff,header);
                         System.out.println("Byte body record " + event);
@@ -129,8 +143,8 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
                     }
                 }
                 else{
-                    if (filename.toLowerCase().endsWith(".done") || filename.endsWith(".DS_Store")) {
-
+                    if (filename.toLowerCase().endsWith(".done")) {
+                        //Accounting for completed files skipped.
                     }
                     else {
                         LOG.info("Zipped File" + list[i]);
