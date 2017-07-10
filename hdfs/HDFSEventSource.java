@@ -27,21 +27,7 @@ import static org.apache.flume.PollableSource.Status.BACKOFF;
 /**
  * Created by ramkrisn on 6/15/17.
  */
-/**
- * Start reading the file out of HDFS Hadoop filesystem, find the corresponding path of the file.
- * Parse the file, each line convert to Event event.
- * Ensure the file is open. Deserialize the data and write it to the local channel on the filesystem system.
- * TODO:
- *  1. Use Hadoop API version 2.6.0-cdh5.4.3
- *  2. Use hadoop.fs filesystem API
- *  3. Do we need a FileChecksum?
- *  4. Use org.apache.hadoop.fs.Path to get a directory path on HDFS
- *  5. Implement an ignorePattern regex which files to retrieve/read on HDFS. Skip the file matches both ignorePattern and includePattern
- *  6. Then fill header with Timestamp, filename, length....
- *
- *
- *  Think About: What if we have multiple agents reading Same Directory.
- */
+
 public class HDFSEventSource extends AbstractSource implements PollableSource, Configurable {
 
     public static final org.slf4j.Logger LOG = LoggerFactory.getLogger(HDFSEventSource.class);
@@ -90,7 +76,6 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
                 list = fileSystem.listStatus(new Path(uri));
                 browse(list);
                 status = Status.READY;
-               // LOG.info("Found the Path and Files to be read are listed" + fileSystem);
             } else {
                 LOG.info("File or Directory Doesn't exist" + fileSystem);
             }
@@ -116,13 +101,11 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
     private void browse(FileStatus[] list) throws IOException, InterruptedException {
         for (int i = 0; i < list.length; i++) {
             if (list[i].isDirectory()) {
-                //LOG.info("Is a SubDirectory" + list[i]);
             }
             else{
                 String filename = String.valueOf(list[i].getPath());
                 if (!(filename.endsWith(".tgz") || filename.endsWith(".gz") || filename.toLowerCase().endsWith(".zip") || filename.toLowerCase().endsWith(".done") || filename.endsWith(".DS_Store"))) {
                     if (!list[i].isFile()) {
-                        //LOG.info("File not found" + list[i]);
                     }
                     else{
                         FSDataInputStream fsin = fileSystem.open(list[i].getPath());
@@ -139,13 +122,6 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
                         getChannelProcessor().processEvent(event);
                         LOG.info("{} is processed." , list[i].getPath());
                         final boolean rename = fileSystem.rename(list[i].getPath(), new Path(new String(list[i].getPath() + ".done")));
-                        if(rename){
-                        //    LOG.info("Renamed" + list[i].getPath());
-                        }
-                        else{
-                          //  LOG.info("Cannot Rename File" + list[i]);
-                        }
-                        //status = Status.READY;
                     }
                 }
                 else{
