@@ -32,22 +32,23 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
 
     public static final org.slf4j.Logger LOG = LoggerFactory.getLogger(HDFSEventSource.class);
 
+    //URI Stores the location of the Directory with Slurp Files to be read. 
     public static String uri ="";
 
     FileSystem fileSystem;
-    FileStatus[] list;
+    FileStatus[] list; //Maintains the Entire list of files to be read. 
 
 
     @Override
     public void configure(Context context) {
-        uri=context.getString("filepath");
+        uri=context.getString("filepath"); //Obtaining Location from Flume Config file. 
         if(uri==null){
             throw new IllegalArgumentException("Cant Find Filepath Parameter");
         }
         LOG.info("adapter will now use {} for its folder", uri.toString());
         Configuration configuration = new Configuration();
         configuration.addResource("core-site.xml");
-        configuration.addResource("hdfs-site.xml");
+        configuration.addResource("hdfs-site.xml"); //Need to specify path of these 2 files in Flume Command. 
 
         LOG.info("HDFSEventSource starting");
         try {
@@ -63,7 +64,7 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
     @Override
     public void start() {
 
-        HDFSEventSource call= new HDFSEventSource(); /* mv back to start. */
+        HDFSEventSource call= new HDFSEventSource(); 
         ChannelDemo cp= new ChannelDemo();
         call.setChannelProcessor(cp);
     }
@@ -74,7 +75,7 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
         try {
             if (fileSystem.exists(new Path(uri))) {
                 list = fileSystem.listStatus(new Path(uri));
-                browse(list);
+                readFiles(list);
                 status = Status.READY;
             } else {
                 LOG.info("File or Directory Doesn't exist" + fileSystem);
@@ -98,13 +99,15 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
     public static void main(String[] args) throws IOException {
     }
 
-    private void browse(FileStatus[] list) throws IOException, InterruptedException {
+    private void readFiles(FileStatus[] list) throws IOException, InterruptedException {
         for (int i = 0; i < list.length; i++) {
             if (list[i].isDirectory()) {
+                //Note Doesn't read contents of Sub Directories. Can be modified by a recursive call here. 
             }
             else{
                 String filename = String.valueOf(list[i].getPath());
-                if (!(filename.endsWith(".tgz") || filename.endsWith(".gz") || filename.toLowerCase().endsWith(".zip") || filename.toLowerCase().endsWith(".done") || filename.endsWith(".DS_Store"))) {
+                //Ignoring Zipped Files and Files already read indicative by .done extension
+                if (!(filename.endsWith(".tgz") || filename.endsWith(".gz") || filename.toLowerCase().endsWith(".zip") || filename.toLowerCase().endsWith(".done"))) {
                     if (!list[i].isFile()) {
                     }
                     else{
@@ -121,6 +124,7 @@ public class HDFSEventSource extends AbstractSource implements PollableSource, C
                         System.out.println("Byte body record " + event);
                         getChannelProcessor().processEvent(event);
                         LOG.info("{} is processed." , list[i].getPath());
+                        //Appending Extension .done to imply it has been read. 
                         final boolean rename = fileSystem.rename(list[i].getPath(), new Path(new String(list[i].getPath() + ".done")));
                     }
                 }

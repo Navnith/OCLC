@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
+<property>
+<name>hadoop.tmp.dir</name>
+<value>/tmp/${user.name}</value>
+<description>A base for other temporary directories.</description>
+</property>
+
+<property>
+<name>fs.defaultFS</name>
+<value>hdfs://cluster</value>
+</property>
+
+<property>
+<name>ha.zookeeper.quorum</name>
+<value>wchddb01txdu.dev.oclc.org:9011,wchddb02txdu.dev.oclc.org:9011,wchddb03txdu.dev.oclc.org:9011</value>
+</property>
+
+<property>
+<name>io.compression.codecs</name>
+<value>org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,com.hadoop.compression.lzo.LzoCodec,com.hadoop.compression.lzo.LzopCodec,org.apache.hadoop.io.compress.BZip2Codec,org.apache.hadoop.io.compress.SnappyCodec</value>
+</property>
+
+<property>
+<name>io.compression.codec.lzo.class</name>
+<value>com.hadoop.compression.lzo.LzoCodec</value>
+</property>
+
+<property>
+<name>fs.trash.interval</name>
+<value>1440</value>
+</property>
+
+<property>
+<name>ipc.server.tcpnodelay</name>
+<value>true</value>
+</property>
+
+<property>
+<name>ipc.client.tcpnodelay</name>
+<value>true</value>
+</property>
+
+<property>
+<name>topology.script.file.name.nouse</name>
+<value>/prod/hadoop/prod/hadoop/conf/get_rack_id.pl</value>
+</property>
+
+<property>
+<name>io.file.buffer.size</name>
+<value>131072</value>
+</property>
+
+<property>
+   <name>hadoop.proxyuser.HADOOPPROXYUSER_CONFIG.hosts</name>
+   <value>*</value>
+   <description>
+      List of hosts the '#USER#' user is allowed to perform 'doAs'                                                                                                                                                     
+      operations.
+
+      The '#USER#' must be replaced with the username o the user who is
+      allowed to perform 'doAs' operations.
+
+      The value can be the '*' wildcard or a list of hostnames.
+
+      For multiple users copy this property and replace the user name
+      in the property name.
+   </description>
+</property>
+
+<property>
+   <name>hadoop.proxyuser.HADOOPPROXYUSER_CONFIG.groups</name>
+   <value>*</value>
+   <description>
+      List of groups the '#USER#' user is allowed to impersonate users
+      from to perform 'doAs' operations.
+
+      The '#USER#' must be replaced with the username o the user who is
+      allowed to perform 'doAs' operations.
+
+      The value can be the '*' wildcard or a list of groups.
+
+      For multiple users copy this property and replace the user name
+      in the property name.
+   </description>
+</property>
+
+
+</configuration>
